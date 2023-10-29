@@ -6,9 +6,13 @@ app = Flask(__name__)
 
 @app.route('/api', methods=['GET'])
 def get_sections():
-    # Get the 'q' and 'a' parameters from the request
-    q = request.args.get('q', 'murder')
-    a = request.args.get('a', '0')
+    # Get the 'q' parameter from the request
+    q = request.args.get('q')
+
+    if not q:
+        return "Query parameter 'q' is required.", 400
+
+    a = '0'  # Set 'a' to always be 0
 
     # Construct the URL with the provided 'q' and 'a'
     url = f"https://devgan.in/index.php?q={q}&a={a}"
