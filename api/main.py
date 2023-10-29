@@ -1,43 +1,44 @@
+from flask import Flask, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 
-# URL of the website
-url = "https://devgan.in/index.php?q=murder&a=0"
+app = Flask(__name__)
 
-# Send an HTTP GET request
-response = requests.get(url)
+@app.route('/api', methods=['GET'])
+def get_sections():
+    # Get the 'q' and 'a' parameters from the request
+    q = request.args.get('q', 'murder')
+    a = request.args.get('a', '0')
 
-# Check if the request was successful (status code 200)
-if response.status_code == 200:
-    # Parse the HTML content of the page
-    soup = BeautifulSoup(response.text, 'html.parser')
+    # Construct the URL with the provided 'q' and 'a'
+    url = f"https://devgan.in/index.php?q={q}&a={a}"
 
-    # Find all div elements with class "search"
-    search_divs = soup.find_all('div', class_='search')
+    # Send an HTTP GET request
+    response = requests.get(url)
 
-    for div in search_divs:
-        # Find all text elements within the current div
-        text_elements = div.stripped_strings
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        search_divs = soup.find_all('div', class_='search')
 
-        # Initialize variables to hold content
-        section_name = ""
-        section_content = ""
+        sections = []
 
-        # Iterate through the text elements
-        for text in text_elements:
-            if "IPC" in text:
-                # If "IPC" is found, it's a new section
-                section_name = text
-            else:
-                # Otherwise, append the text to the section content
-                section_content += " " + text
+        for div in search_divs:
+            text_elements = div.stripped_strings
+            section_name = ""
+            section_content = ""
 
-        # Print the section name and content
-        if section_name:
-            print(section_name, section_content)
+            for text in text_elements:
+                if "IPC" in text:
+                    section_name = text
+                else:
+                    section_content += " " + text
 
-else:
-    print("Failed to retrieve the web page.")
+            if section_name:
+                sections.append({"section_name": section_name, "section_content": section_content})
 
-# Close the HTTP response
-response.close()
+        return jsonify(sections)
+    else:
+        return "Failed to retrieve the web page.", 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
